@@ -5,6 +5,7 @@ from datetime import timedelta
 from hypothesis import given, settings, Phase
 from transactron.testing import *
 from transactron.lib.storage import *
+from transactron.utils.transactron_helpers import make_layout
 
 
 class TestContentAddressableMemory(TestCaseWithSimulator):
@@ -157,7 +158,7 @@ class TestMemoryBank(TestCaseWithSimulator):
         data_width = 6
         m = SimpleTestCircuit(
             MemoryBank(
-                data_layout=[("data", data_width)],
+                shape=make_layout(("data", data_width)),
                 elem_count=max_addr,
                 transparent=transparent,
                 read_ports=read_ports,
@@ -230,7 +231,10 @@ class TestAsyncMemoryBank(TestCaseWithSimulator):
         data_width = 6
         m = SimpleTestCircuit(
             AsyncMemoryBank(
-                data_layout=[("data", data_width)], elem_count=max_addr, read_ports=read_ports, write_ports=write_ports
+                shape=make_layout(("data", data_width)),
+                elem_count=max_addr,
+                read_ports=read_ports,
+                write_ports=write_ports,
             ),
         )
 
