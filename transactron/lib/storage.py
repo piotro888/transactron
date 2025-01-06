@@ -38,7 +38,7 @@ class MemoryBank(Elaboratable):
         self,
         *,
         shape: ShapeLike,
-        elem_count: int,
+        depth: int,
         granularity: Optional[int] = None,
         transparent: bool = False,
         read_ports: int = 1,
@@ -51,7 +51,7 @@ class MemoryBank(Elaboratable):
         ----------
         shape: ShapeLike
             The format of structures stored in the Memory.
-        elem_count: int
+        depth: int
             Number of elements stored in Memory.
         granularity: Optional[int]
             Granularity of write. If `None` the whole structure is always saved at once.
@@ -71,9 +71,9 @@ class MemoryBank(Elaboratable):
         """
         self.src_loc = get_src_loc(src_loc)
         self.shape = shape
-        self.elem_count = elem_count
+        self.depth = depth
         self.granularity = granularity
-        self.addr_width = bits_for(self.elem_count - 1)
+        self.addr_width = bits_for(self.depth - 1)
         self.transparent = transparent
         self.reads_ports = read_ports
         self.writes_ports = write_ports
@@ -99,7 +99,7 @@ class MemoryBank(Elaboratable):
     def elaborate(self, platform) -> TModule:
         m = TModule()
 
-        m.submodules.mem = self.mem = mem = self.memory_type(shape=self.shape, depth=self.elem_count, init=[])
+        m.submodules.mem = self.mem = mem = self.memory_type(shape=self.shape, depth=self.depth, init=[])
         write_port = [mem.write_port(granularity=self.granularity) for _ in range(self.writes_ports)]
         read_port = [
             mem.read_port(transparent_for=write_port if self.transparent else []) for _ in range(self.reads_ports)
@@ -266,7 +266,7 @@ class AsyncMemoryBank(Elaboratable):
         self,
         *,
         shape: ShapeLike,
-        elem_count: int,
+        depth: int,
         granularity: Optional[int] = None,
         read_ports: int = 1,
         write_ports: int = 1,
@@ -278,7 +278,7 @@ class AsyncMemoryBank(Elaboratable):
         ----------
         shape: ShapeLike
             The format of structures stored in the Memory.
-        elem_count: int
+        depth: int
             Number of elements stored in Memory.
         granularity: Optional[int]
             Granularity of write. If `None` the whole structure is always saved at once.
@@ -294,9 +294,9 @@ class AsyncMemoryBank(Elaboratable):
         """
         self.src_loc = get_src_loc(src_loc)
         self.shape = shape
-        self.elem_count = elem_count
+        self.depth = depth
         self.granularity = granularity
-        self.addr_width = bits_for(self.elem_count - 1)
+        self.addr_width = bits_for(self.depth - 1)
         self.reads_ports = read_ports
         self.writes_ports = write_ports
         self.memory_type = memory_type
@@ -320,7 +320,7 @@ class AsyncMemoryBank(Elaboratable):
     def elaborate(self, platform) -> TModule:
         m = TModule()
 
-        mem = self.memory_type(shape=self.shape, depth=self.elem_count, init=[])
+        mem = self.memory_type(shape=self.shape, depth=self.depth, init=[])
         m.submodules.mem = self.mem = mem
         write_port = [mem.write_port(granularity=self.granularity) for _ in range(self.writes_ports)]
         read_port = [mem.read_port(domain="comb") for _ in range(self.reads_ports)]

@@ -159,7 +159,7 @@ class TestMemoryBank(TestCaseWithSimulator):
         m = SimpleTestCircuit(
             MemoryBank(
                 shape=make_layout(("data", data_width)),
-                elem_count=max_addr,
+                depth=max_addr,
                 transparent=transparent,
                 read_ports=read_ports,
                 write_ports=write_ports,
@@ -232,7 +232,7 @@ class TestAsyncMemoryBank(TestCaseWithSimulator):
         m = SimpleTestCircuit(
             AsyncMemoryBank(
                 shape=make_layout(("data", data_width)),
-                elem_count=max_addr,
+                depth=max_addr,
                 read_ports=read_ports,
                 write_ports=write_ports,
             ),
