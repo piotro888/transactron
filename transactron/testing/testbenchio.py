@@ -89,6 +89,7 @@ class CallTrigger:
                 return results
 
     async def until_all_done(self) -> Any:
+        """Same as `until_done` but wait for all results instead of any result."""
         async for results in self:
             if all(res is not None for res in results):
                 return results
