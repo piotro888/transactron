@@ -56,7 +56,7 @@ class MemoryBank(Elaboratable):
         granularity: Optional[int]
             Granularity of write. If `None` the whole structure is always saved at once.
             If not, shape is split into `granularity` parts, which can be saved independently (according to
-            `amaranth.lib.mem` granularity logic).
+            `amaranth.lib.memory` granularity logic).
         transparent: bool
             Read port transparency, false by default. When a read port is transparent, if a given memory address
             is read and written in the same clock cycle, the read returns the written value instead of the value
@@ -83,7 +83,7 @@ class MemoryBank(Elaboratable):
         self.read_resps_layout = make_layout(("data", self.shape))
         write_layout = [("addr", self.addr_width), ("data", self.shape)]
         if self.granularity is not None:
-            # use Amaranth granularity rules
+            # use Amaranth lib.memory granularity rule checks and width
             amaranth_write_port_sig = memory.WritePort.Signature(
                 addr_width=0,
                 shape=self.shape,  # type: ignore
@@ -125,7 +125,7 @@ class MemoryBank(Elaboratable):
                 m.d.sync += read_output_valid[i].eq(0)
 
             # Amaranth Mux drops lib.data Layouts
-            return View(self.shape, Mux(overflow_valid[i], overflow_data[i], read_port[i].data))
+            return {"data": View(self.shape, Mux(overflow_valid[i], overflow_data[i], read_port[i].data))}
 
         for i in range(self.reads_ports):
             m.d.comb += read_port[i].en.eq(0)  # because the init value is 1
@@ -283,7 +283,7 @@ class AsyncMemoryBank(Elaboratable):
         granularity: Optional[int]
             Granularity of write. If `None` the whole structure is always saved at once.
             If not, shape is split into `granularity` parts, which can be saved independently (according to
-            `amaranth.lib.mem` granularity logic).
+            `amaranth.lib.mememory` granularity logic).
         read_ports: int
             Number of read ports.
         write_ports: int
@@ -305,7 +305,7 @@ class AsyncMemoryBank(Elaboratable):
         self.read_resps_layout: LayoutList = [("data", self.shape)]
         write_layout = [("addr", self.addr_width), ("data", self.shape)]
         if self.granularity is not None:
-            # use Amaranth granularity rules
+            # use Amaranth lib.memory granularity rule checks and width
             amaranth_write_port_sig = memory.WritePort.Signature(
                 addr_width=0,
                 shape=shape,  # type: ignore
@@ -328,7 +328,7 @@ class AsyncMemoryBank(Elaboratable):
         @def_methods(m, self.read)
         def _(i: int, addr):
             m.d.comb += read_port[i].addr.eq(addr)
-            return read_port[i].data
+            return {"data": read_port[i].data}
 
         @def_methods(m, self.write)
         def _(i: int, arg):
