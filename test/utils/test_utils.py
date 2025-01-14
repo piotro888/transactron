@@ -10,7 +10,7 @@ from transactron.utils import (
     popcount,
     count_leading_zeros,
     count_trailing_zeros,
-    gen_cyclic_mask,
+    cyclic_mask,
 )
 from amaranth.utils import ceil_log2
 
@@ -204,11 +204,7 @@ class GenCyclicMaskTestCircuit(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.sig_out.eq(gen_cyclic_mask(self.xlen, self.start, self.end))
-
-        # dummy signal
-        s = Signal()
-        m.d.sync += s.eq(1)
+        m.d.comb += self.sig_out.eq(cyclic_mask(self.xlen, self.start, self.end))
 
         return m
 
@@ -236,7 +232,6 @@ class TestGenCyclicMask(TestCaseWithSimulator):
             expected ^= (1 << self.size) - 1
             expected |= 1 << start
             expected |= 1 << end
-        print(start, end, out, expected)
 
         assert out == expected
 

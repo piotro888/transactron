@@ -13,7 +13,7 @@ __all__ = [
     "popcount",
     "count_leading_zeros",
     "count_trailing_zeros",
-    "gen_cyclic_mask",
+    "cyclic_mask",
     "flatten_signals",
     "shape_of",
     "const_of",
@@ -77,7 +77,7 @@ def count_trailing_zeros(s: Value) -> Value:
     return count_leading_zeros(s[::-1])
 
 
-def gen_cyclic_mask(bits: int, start: Value, end: Value):
+def cyclic_mask(bits: int, start: Value, end: Value):
     """
     Generate `bits` bit-wide mask with ones from `start` to `end` position, including both ends.
     If `end` value is < than `start` the mask wraps around.
@@ -89,7 +89,7 @@ def gen_cyclic_mask(bits: int, start: Value, end: Value):
     length = (end - start + 1).as_unsigned()
     mask_se = ((1 << length) - 1) << start
 
-    # start >= end
+    # start > end
     left = (1 << (end + 1)) - 1
     right = (1 << ((bits - start).as_unsigned())) - 1
     mask_es = left | (right << start)
