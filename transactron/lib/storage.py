@@ -283,7 +283,7 @@ class AsyncMemoryBank(Elaboratable):
         granularity: Optional[int]
             Granularity of write. If `None` the whole structure is always saved at once.
             If not, shape is split into `granularity` parts, which can be saved independently (according to
-            `amaranth.lib.mememory` granularity logic).
+            `amaranth.lib.memory` granularity logic).
         read_ports: int
             Number of read ports.
         write_ports: int
