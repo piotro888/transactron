@@ -2,12 +2,13 @@ from amaranth import Shape, ShapeLike, unsigned, Value
 from amaranth.lib.wiring import Signature, Flow, Member
 from amaranth_types import AbstractInterface, AbstractSignature
 
-from typing import Any, Generic, Mapping, Optional, Self, TypeVar
+from typing import Any, Generic, Mapping, Optional, Self, TypeVar, final
 
 __all__ = [
     "ComponentSignal",
     "CIn",
     "COut",
+    "AbstractComponentInterface",
     "ComponentInterface",
     "FlippedComponentInterface",
 ]
@@ -72,7 +73,11 @@ class COut(ComponentSignal):
         super().__init__(Flow.Out, shape)
 
 
-class ComponentInterface(AbstractInterface[AbstractSignature]):
+class AbstractComponentInterface(AbstractInterface[AbstractSignature]):
+    def flipped(self) -> "AbstractComponentInterface": ...
+
+
+class ComponentInterface(AbstractComponentInterface):
     """Component Interface
     Syntactic sugar for using typed lib.wiring `Signature`s in `Component`.
 
@@ -105,7 +110,7 @@ class ComponentInterface(AbstractInterface[AbstractSignature]):
     """
 
     @property
-    def signature(self) -> AbstractSignature:
+    def signature(self) -> Signature:
         """Amaranth lib.wiring `Signature` constructed from defined `ComponentInterface` attributes."""
         return Signature(self._to_members_list())
 
@@ -132,10 +137,11 @@ class ComponentInterface(AbstractInterface[AbstractSignature]):
         return res
 
 
-_T_ComponentInterface = TypeVar("_T_ComponentInterface", bound="ComponentInterface")
+_T_ComponentInterface = TypeVar("_T_ComponentInterface", bound=ComponentInterface)
 
 
-class FlippedComponentInterface(AbstractInterface[AbstractSignature], Generic[_T_ComponentInterface]):
+@final
+class FlippedComponentInterface(AbstractComponentInterface, Generic[_T_ComponentInterface]):
     """
     Represents `ComponentInterface` with flipped `Flow` directions of its members.
     Flip is applied only in resulting `signature` property.
