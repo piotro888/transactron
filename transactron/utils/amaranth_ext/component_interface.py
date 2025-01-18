@@ -24,7 +24,7 @@ class ComponentSignal(Value):
     """
 
     _flow: Flow  # Don't access directly - flips are not applied here.
-    _shape: Shape
+    _shape: ShapeLike
 
     def __init__(self, flow: Flow, shape: Optional[ShapeLike] = None):
         """
@@ -35,15 +35,16 @@ class ComponentSignal(Value):
         shape: Optional ShapeLike
             Shape of `Signal` member. `unsigned(1)` by default.
         """
-        self._shape = unsigned(1) if shape is None else Shape.cast(shape)
+        self._shape = unsigned(1) if shape is None else shape
         self._flow = flow
 
     def as_member(self):
+        # from original (not casted) shape
         return self._flow(self._shape)
 
     # Value abstract methods
     def shape(self):
-        return self._shape
+        return Shape.cast(self._shape)
 
     def _rhs_signals(self):
         # Should never be called - only used from HDL

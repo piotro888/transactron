@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from amaranth import Signal
+from amaranth import Signal, unsigned
+from amaranth.lib.data import ArrayLayout, View
 from amaranth.lib.wiring import Component, Flow, In
 from transactron.utils.amaranth_ext.component_interface import CIn, COut, ComponentInterface, ComponentSignal
 
@@ -23,6 +24,7 @@ class TBInterface(ComponentInterface):
         self.s = SubInterface()
         self.f = SubInterface().flipped()
         self.uf = SubInterface().flipped().flipped()
+        self.a = COut(ArrayLayout(2, 3))
 
 
 class TestComponentInterface(TestCase):
@@ -53,3 +55,8 @@ class TestComponentInterface(TestCase):
         assert isinstance(ci.i, ComponentSignal)
         assert isinstance(ci.f.i, ComponentSignal)
         assert isinstance(ci.uf.f.i, ComponentSignal)
+
+        assert t.iface.f.f.i.shape() == unsigned(1)
+        assert t.iface.i.shape() == unsigned(2)
+        assert t.iface.a.shape() == ArrayLayout(2, 3)
+        assert isinstance(t.iface.a, View)
