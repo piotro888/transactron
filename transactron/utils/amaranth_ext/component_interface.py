@@ -96,6 +96,7 @@ class ComponentInterface(AbstractComponentInterface):
     --------
     .. highlight:: python
     .. code-block:: python
+
         class ExampleInterface(ComponentInterface):
             def __init__(self, data_width: int):
                 self.data_in = CIn(data_width)
