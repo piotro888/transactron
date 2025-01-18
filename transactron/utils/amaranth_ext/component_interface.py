@@ -49,7 +49,12 @@ class ComponentSignal(Value):
         raise NotImplementedError
 
     # Signal API compatiblitly types (Signal is @final, Value is used instead)
+    width: int
+    signed: bool
     name: str
+    init: int
+    reset_less: bool
+    attrs: dict
     decoder: Any
 
 
