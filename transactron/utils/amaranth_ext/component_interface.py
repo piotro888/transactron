@@ -2,7 +2,7 @@ from amaranth import Shape, ShapeLike, unsigned, Value
 from amaranth.lib.wiring import Signature, Flow, Member
 from amaranth_types import AbstractInterface, AbstractSignature
 
-from typing import Any, Mapping, Optional
+from typing import Any, Generic, Mapping, Optional, Self, TypeVar
 
 __all__ = [
     "ComponentSignal",
@@ -104,7 +104,7 @@ class ComponentInterface(AbstractInterface[AbstractSignature]):
         """Amaranth lib.wiring `Signature` constructed from defined `ComponentInterface` attributes."""
         return Signature(self._to_members_list())
 
-    def flipped(self) -> "FlippedComponentInterface":
+    def flipped(self) -> "FlippedComponentInterface[Self]":
         """`ComponentInterface` with flipped `Flow` direction of members."""
         return FlippedComponentInterface(self)
 
@@ -117,22 +117,26 @@ class ComponentInterface(AbstractInterface[AbstractSignature]):
             m_val = getattr(self, m_name)
             if isinstance(m_val, ComponentSignal):
                 res[m_name] = m_val.as_member()
-            elif isinstance(m_val, ComponentInterface):
+            elif isinstance(m_val, ComponentInterface) or isinstance(m_val, FlippedComponentInterface):
                 res[m_name] = Flow.Out(m_val.signature)
             else:
                 raise AttributeError(
-                    f"Illegal attribute `{name_prefix+m_name}`. Expected `CIn`, `COut` or `ComponentInterface`"
+                    f"Illegal attribute `{name_prefix+m_name}`. "
+                    "Expected `CIn`, `COut`, `ComponentInterface` or `FlippedComponentInterface`"
                 )
         return res
 
 
-class FlippedComponentInterface(ComponentInterface):
+_T_ComponentInterface = TypeVar("_T_ComponentInterface", bound="ComponentInterface")
+
+
+class FlippedComponentInterface(AbstractInterface[AbstractSignature], Generic[_T_ComponentInterface]):
     """
-    Represents another `ComponentInterface` with flipped `Flow` directions of its members.
+    Represents `ComponentInterface` with flipped `Flow` directions of its members.
     Flip is applied only in resulting `signature` property.
     """
 
-    def __init__(self, base: ComponentInterface):
+    def __init__(self, base: _T_ComponentInterface):
         self._base = base
 
     def __getattr__(self, name: str):
@@ -143,6 +147,6 @@ class FlippedComponentInterface(ComponentInterface):
         """Amaranth lib.wiring `Signature` constructed from defined `ComponentInterface` attributes."""
         return self._base.signature.flip()
 
-    def flipped(self) -> "FlippedComponentInterface":
+    def flipped(self) -> _T_ComponentInterface:
         """`ComponentInterface` with flipped `Flow` direction of members."""
-        return FlippedComponentInterface(self)
+        return self._base
