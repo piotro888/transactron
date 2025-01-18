@@ -1,11 +1,12 @@
-from amaranth import Shape, ShapeLike, unsigned, Value
+from amaranth import ShapeCastable, ShapeLike, Signal, unsigned
 from amaranth.lib.wiring import Signature, Flow, Member
 from amaranth_types import AbstractInterface, AbstractSignature
 
-from typing import Any, Generic, Mapping, Optional, Self, TypeVar, final
+from abc import ABCMeta
+from typing import TYPE_CHECKING, Generic, Mapping, Self, TypeVar, final, overload
+from dataclasses import dataclass
 
 __all__ = [
-    "ComponentSignal",
     "CIn",
     "COut",
     "AbstractComponentInterface",
@@ -13,64 +14,81 @@ __all__ = [
     "FlippedComponentInterface",
 ]
 
+T = TypeVar("T")
 
-class ComponentSignal(Value):
-    """Component Signal
-    Element of `ComponentInterface`. Use `CIn` and `COut` wrappers.
 
-    It is compatible with `Signal` for type checking and stores information for `Signature` construction.
-    It should never be referenced in HDL and exist only on type level.
-    Real `Signal` is created in place of `ComponentSignal` in `Component` constructor.
+class _ShapeTypingMeta(ABCMeta):
+    """
+    Internal metaclass for adding type information to `_ComponentSignal`.
+
+    HACK: When type-checking it specifies return type, as targeted `Signal(shape)` type, which is not correct.
+    Implementation forwards all calls unaltered, so the object is really an `_ComponentSignal` storing required
+    information.
+    At the stage of `Component` creation all fields are instatiated in-place and have the correct target type
+    (given initially to typchecker) by `Component.__init__`.
     """
 
-    _flow: Flow  # Don't access directly - flips are not applied here.
-    _shape: ShapeLike
+    if TYPE_CHECKING:
+        # Amaranth ShapeCastable Signal creation rules
 
-    def __init__(self, flow: Flow, shape: Optional[ShapeLike] = None):
-        """
-        Parameters
-        ----------
-        flow: Flow
-            Direction of `Signal` member. `Flow.In` or `Flow.Out`.
-        shape: Optional ShapeLike
-            Shape of `Signal` member. `unsigned(1)` by default.
-        """
-        self._shape = unsigned(1) if shape is None else shape
-        self._flow = flow
+        @overload
+        def __call__(cls, shape: ShapeCastable[T]) -> T:
+            raise NotImplementedError
+
+        @overload
+        def __call__(cls, shape: ShapeLike = unsigned(1)) -> Signal:
+            raise NotImplementedError
+
+        def __call__(cls, shape: ShapeLike = unsigned(1)):
+            raise NotImplementedError
+
+    else:
+        # bypass metaclass - create _ComponentSignal
+        def __call__(cls, shape: ShapeLike = unsigned(1)):
+            return super().__call__(shape)
+
+
+@dataclass
+class _ComponentSignal:
+    """Component Signal
+    Element of `ComponentInterface`. Do not use directly - use `CIn` and `COut` wrappers that add correct typing
+    information.
+
+    Created signals should never be referenced directly in HDL code and exist only on type checking
+    and `ComponentInterface` definition level.
+
+    Real `Signal` is created in place of `ComponentSignal` when initialising `Component`.
+
+    Parameters
+    ----------
+
+    flow: Flow
+        Direction of signal flow. `Flow.In` or `Flow.Out`.
+
+    shape: ShapeLike
+        Shape of Signal. `unsigned(1)` by default.
+    """
+
+    flow: Flow
+    shape: ShapeLike
 
     def as_member(self):
-        # from original (not casted) shape
-        return self._flow(self._shape)
-
-    # Value abstract methods
-    def shape(self):
-        return Shape.cast(self._shape)
-
-    def _rhs_signals(self):
-        # Should never be called - only used from HDL
-        raise NotImplementedError
-
-    # Signal API compatiblitly types (Signal is @final, Value is used instead)
-    width: int
-    signed: bool
-    name: str
-    init: int
-    reset_less: bool
-    attrs: dict
-    decoder: Any
+        return self.flow(self.shape)
 
 
-class CIn(ComponentSignal):
-    """`ComponentSignal` with `Flow.In` direction."""
+@final
+class CIn(_ComponentSignal, metaclass=_ShapeTypingMeta):
+    """`_ComponentSignal` with `Flow.In` direction."""
 
-    def __init__(self, shape: Optional[ShapeLike] = None):
+    def __init__(self, shape: ShapeLike):
         super().__init__(Flow.In, shape)
 
 
-class COut(ComponentSignal):
-    """`ComponentSignal` with `Flow.Out` direction."""
+@final
+class COut(_ComponentSignal, metaclass=_ShapeTypingMeta):
+    """`_ComponentSignal` with `Flow.Out` direction."""
 
-    def __init__(self, shape: Optional[ShapeLike] = None):
+    def __init__(self, shape: ShapeLike):
         super().__init__(Flow.Out, shape)
 
 
@@ -109,7 +127,7 @@ class ComponentInterface(AbstractComponentInterface):
                 self.valid = CIn()
                 self.x = SubInterface().flipped()
 
-        class Example(Component):
+        class Examp,le(Component):
             bus: ExampleInterface
             def __init__(self):
                 super().__init__({bus: In(ExampleInterface(2).signature)})
@@ -131,13 +149,13 @@ class ComponentInterface(AbstractComponentInterface):
                 continue
 
             m_val = getattr(self, m_name)
-            if isinstance(m_val, ComponentSignal):
+            if isinstance(m_val, _ComponentSignal):
                 res[m_name] = m_val.as_member()
             elif isinstance(m_val, ComponentInterface) or isinstance(m_val, FlippedComponentInterface):
                 res[m_name] = Flow.Out(m_val.signature)
             else:
                 raise AttributeError(
-                    f"Illegal attribute `{name_prefix+m_name}`. "
+                    f"Illegal attribute `{name_prefix+m_name}`: `{m_val}`.  "
                     "Expected `CIn`, `COut`, `ComponentInterface` or `FlippedComponentInterface`"
                 )
         return res

@@ -3,7 +3,7 @@ from unittest import TestCase
 from amaranth import Signal, unsigned
 from amaranth.lib.data import ArrayLayout, View
 from amaranth.lib.wiring import Component, Flow, In
-from transactron.utils.amaranth_ext.component_interface import CIn, COut, ComponentInterface, ComponentSignal
+from transactron.utils.amaranth_ext.component_interface import CIn, COut, ComponentInterface
 
 
 class SubSubInterface(ComponentInterface):
@@ -51,10 +51,6 @@ class TestComponentInterface(TestCase):
         assert sig.members["s"].signature.members["f"].signature.members["i"].flow is Flow.Out
         assert sig.members["f"].signature.members["f"].signature.members["i"].flow is Flow.In
         assert sig.members["uf"].signature.members["f"].signature.members["i"].flow is Flow.Out
-
-        assert isinstance(ci.i, ComponentSignal)
-        assert isinstance(ci.f.i, ComponentSignal)
-        assert isinstance(ci.uf.f.i, ComponentSignal)
 
         assert t.iface.f.f.i.shape() == unsigned(1)
         assert t.iface.i.shape() == unsigned(2)
