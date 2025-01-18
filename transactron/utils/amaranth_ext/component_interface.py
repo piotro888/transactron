@@ -76,6 +76,10 @@ class COut(ComponentSignal):
 class AbstractComponentInterface(AbstractInterface[AbstractSignature]):
     def flipped(self) -> "AbstractComponentInterface": ...
 
+    # Remove after pyright update
+    @property
+    def signature(self) -> AbstractSignature: ...
+
 
 class ComponentInterface(AbstractComponentInterface):
     """Component Interface
