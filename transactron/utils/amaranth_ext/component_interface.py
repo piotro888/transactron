@@ -111,7 +111,7 @@ class ComponentInterface(AbstractComponentInterface):
     """
 
     @property
-    def signature(self) -> Signature:
+    def signature(self) -> AbstractSignature:
         """Amaranth lib.wiring `Signature` constructed from defined `ComponentInterface` attributes."""
         return Signature(self._to_members_list())
 
