@@ -234,7 +234,7 @@ class WideFifo(Elaboratable):
         self.write_layout = data.StructLayout(
             {"count": range(write_width + 1), "data": data.ArrayLayout(shape, write_width)}
         )
-        self.read = Method(i=[("count", range(read_width + 1))], o=self.read_layout, src_loc=src_loc)
+        self.read = Method(i=data.StructLayout({"count": range(read_width + 1)}), o=self.read_layout, src_loc=src_loc)
         self.peek = Method(o=self.read_layout, src_loc=src_loc)
         self.write = Method(i=self.write_layout, src_loc=src_loc)
         self.clear = Method(src_loc=src_loc)

@@ -4,7 +4,8 @@ import enum
 from transactron.utils import *
 from amaranth import *
 from amaranth import tracer
-from amaranth_types import ValueLike
+from amaranth.lib.data import StructLayout, View
+from amaranth_types import ShapeLike, ValueLike
 from typing import TYPE_CHECKING, Annotated, Optional, Iterator, TypeAlias, TypeVar, Unpack, overload
 from .transaction_base import *
 from contextlib import contextmanager
@@ -21,7 +22,12 @@ if TYPE_CHECKING:
     from .transaction import Transaction  # noqa: F401
 
 
-__all__ = ["MethodDir", "Provided", "Required", "Method", "Methods"]
+__all__ = ["EmptyLayout", "MethodDir", "Provided", "Required", "Method", "Methods"]
+
+
+class EmptyLayout(StructLayout):
+    def __init__(self):
+        super().__init__({})
 
 
 class MethodDir(enum.Enum):
@@ -76,7 +82,12 @@ class Method(TransactionBase["Transaction | Method"]):
     _body_ptr: Optional["Body | Method"] = None
 
     def __init__(
-        self, *, name: Optional[str] = None, i: MethodLayout = (), o: MethodLayout = (), src_loc: int | SrcLoc = 0
+        self,
+        *,
+        name: Optional[str] = None,
+        i: ShapeLike = EmptyLayout(),
+        o: ShapeLike = EmptyLayout(),
+        src_loc: int | SrcLoc = 0,
     ):
         """
         Parameters
@@ -97,8 +108,8 @@ class Method(TransactionBase["Transaction | Method"]):
         self.name = name or tracer.get_var_name(depth=2, default=owner_name)
         self.ready = Signal(name=self.owned_name + "_ready")
         self.run = Signal(name=self.owned_name + "_run")
-        self.data_in: MethodStruct = Signal(from_method_layout(i), name=self.owned_name + "_data_in")
-        self.data_out: MethodStruct = Signal(from_method_layout(o), name=self.owned_name + "_data_out")
+        self.data_in = Signal(i, name=self.owned_name + "_data_in")
+        self.data_out = Signal(o, name=self.owned_name + "_data_out")
 
     @property
     def layout_in(self):
@@ -337,8 +348,8 @@ class Methods(Sequence[Method]):
         if isinstance(kwargs["src_loc"], int):
             kwargs["src_loc"] += 1
         self._methods = [Method(**{**kwargs, "name": f"{self.name}{i}"}) for i in range(count)]
-        self._layout_in = from_method_layout(kwargs["i"] if "i" in kwargs else ())
-        self._layout_out = from_method_layout(kwargs["o"] if "o" in kwargs else ())
+        self._layout_in = kwargs["i"] if "i" in kwargs else EmptyLayout()
+        self._layout_out = kwargs["o"] if "o" in kwargs else EmptyLayout()
 
     @property
     def layout_in(self):

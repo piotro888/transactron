@@ -2,10 +2,13 @@ from amaranth import *
 
 from transactron.core import Method, Methods, TModule, def_method, def_methods
 from transactron.utils.amaranth_ext.elaboratables import MultiPriorityEncoder
-from amaranth.lib.data import ArrayLayout
+from amaranth.lib.data import ArrayLayout, StructLayout
 
 
-__all__ = ["PriorityEncoderAllocator"]
+__all__ = [
+    "PriorityEncoderAllocator",
+    "PreservedOrderAllocator",
+]
 
 
 class PriorityEncoderAllocator(Elaboratable):
@@ -40,8 +43,8 @@ class PriorityEncoderAllocator(Elaboratable):
         self.ways = ways
         self.init = init
 
-        self.alloc = Methods(ways, o=[("ident", range(entries))])
-        self.free = Methods(ways, i=[("ident", range(entries))])
+        self.alloc = Methods(ways, o=range(entries))
+        self.free = Methods(ways, i=range(entries))
 
     def elaborate(self, platform) -> TModule:
         m = TModule()
@@ -54,7 +57,7 @@ class PriorityEncoderAllocator(Elaboratable):
         @def_methods(m, self.alloc, ready=lambda i: encoder.valids[i])
         def _(i):
             m.d.sync += not_used.bit_select(encoder.outputs[i], 1).eq(0)
-            return {"ident": encoder.outputs[i]}
+            return encoder.outputs[i]
 
         @def_methods(m, self.free)
         def _(_, ident):
@@ -88,11 +91,11 @@ class PreservedOrderAllocator(Elaboratable):
     def __init__(self, entries: int):
         self.entries = entries
 
-        self.alloc = Method(o=[("ident", range(entries))])
-        self.free = Method(i=[("ident", range(entries))])
-        self.free_idx = Method(i=[("idx", range(entries))])
+        self.alloc = Method(o=StructLayout({"ident": range(entries)}))
+        self.free = Method(i=StructLayout({"ident": range(entries)}))
+        self.free_idx = Method(i=StructLayout({"idx": range(entries)}))
         self.order = Method(
-            o=[("used", range(entries + 1)), ("order", ArrayLayout(range(self.entries), self.entries))],
+            o=StructLayout({"used": range(entries + 1), "order": ArrayLayout(range(self.entries), self.entries)}),
         )
 
     def elaborate(self, platform) -> TModule:

@@ -3,16 +3,15 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from itertools import count
 
-from amaranth.lib.data import StructLayout
 from transactron.core.tmodule import CtrlPath, TModule
 from transactron.core.transaction_base import TransactionBase
 
 from amaranth import *
-from amaranth_types import ValueLike, ModuleLike, SrcLoc
+from amaranth_types import ShapeLike, ValueLike, ModuleLike, SrcLoc
 from typing import TYPE_CHECKING, ClassVar, NewType, NotRequired, Optional, Callable, TypedDict, Unpack, final
 from transactron.utils.amaranth_ext.elaboratables import OneHotSwitchDynamic
 from transactron.utils.assign import AssignArg
-from transactron.utils.transactron_helpers import from_method_layout, method_def_helper
+from transactron.utils.transactron_helpers import method_def_helper
 from transactron.utils.typing import MethodStruct
 
 if TYPE_CHECKING:
@@ -57,7 +56,7 @@ class Body(TransactionBase["Body"]):
             if len(args) == 1:
                 return args[0]
             else:
-                ret = Signal(from_method_layout(i))
+                ret = Signal(i)
                 for k in OneHotSwitchDynamic(m, runs):
                     m.d.comb += ret.eq(args[k])
                 return ret
@@ -68,9 +67,9 @@ class Body(TransactionBase["Body"]):
         self.ready = Signal(name=self.owned_name + "_ready")
         self.runnable = Signal(name=self.owned_name + "_runnable")
         self.run = Signal(name=self.owned_name + "_run")
-        self.data_in: MethodStruct = Signal(from_method_layout(i), name=self.owned_name + "_data_in")
-        self.data_out: MethodStruct = Signal(from_method_layout(o), name=self.owned_name + "_data_out")
         self.combiner: Callable[[Module, Sequence[MethodStruct], Value], AssignArg] = (
+        self.data_in = Signal(i, name=self.owned_name + "_data_in")
+        self.data_out = Signal(o, name=self.owned_name + "_data_out")
             kwargs["combiner"] if "combiner" in kwargs else default_combiner
         )
         self.nonexclusive = kwargs["nonexclusive"] if "nonexclusive" in kwargs else False
@@ -82,7 +81,7 @@ class Body(TransactionBase["Body"]):
         self.method_calls = defaultdict(list)
 
         if self.nonexclusive:
-            assert len(self.data_in.as_value()) == 0 or self.combiner is not None
+            assert self.data_in.shape().width == 0 or self.combiner is not None
 
     def _validate_arguments(self, arg_rec: MethodStruct) -> ValueLike:
         if self.validate_arguments is not None:

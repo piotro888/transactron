@@ -419,9 +419,9 @@ class TransactionManager(Elaboratable):
         graph = OwnershipGraph(fragment)
         method_map = MethodMap(self.transactions)
         for method, transactions in method_map.transactions_by_method.items():
-            if len(method.data_in.as_value()) > len(method.data_out.as_value()):
+            if method.data_in.shape().width > method.data_out.shape().width:
                 direction = Direction.IN
-            elif method.data_in.shape().size < method.data_out.shape().size:
+            elif method.data_in.shape().width < method.data_out.shape().width:
                 direction = Direction.OUT
             else:
                 direction = Direction.INOUT

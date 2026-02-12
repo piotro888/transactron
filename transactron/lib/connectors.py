@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from amaranth import *
 from amaranth.lib.data import View
+from amaranth_types import ShapeLike
 import amaranth.lib.fifo
 
 from transactron.utils.transactron_helpers import from_method_layout
@@ -251,7 +252,7 @@ class Connect(Elaboratable):
         structure.
     """
 
-    def __init__(self, layout: MethodLayout = (), rev_layout: MethodLayout = (), *, src_loc: int | SrcLoc = 0):
+    def __init__(self, layout: ShapeLike = EmptyLayout(), rev_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0):
         """
         Parameters
         ----------
@@ -300,7 +301,7 @@ class ConnectTrans(Elaboratable):
     method1: Required[Method]
     method2: Required[Method]
 
-    def __init__(self, i_layout: MethodLayout = (), o_layout: MethodLayout = (), *, src_loc: int | SrcLoc = 0):
+    def __init__(self, i_layout: ShapeLike = EmptyLayout(), o_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0):
         """
         Parameters
         ----------
@@ -364,8 +365,8 @@ class CrossbarConnectTrans(Elaboratable):
         self,
         count1: int = 1,
         count2: int = 1,
-        i_layout: MethodLayout = (),
-        o_layout: MethodLayout = (),
+        i_layout: ShapeLike = EmptyLayout(),
+        o_layout: ShapeLike = EmptyLayout(),
         *,
         src_loc: int | SrcLoc = 0,
     ):

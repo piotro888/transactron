@@ -1,4 +1,5 @@
 from amaranth import *
+from amaranth.lib.data import StructLayout
 from amaranth_types import ValueLike, ModuleLike, HasElaborate
 
 from transactron.utils.transactron_helpers import get_src_loc
@@ -75,8 +76,8 @@ class MethodMap(Elaboratable, TransformerOneTarget):
 
     def __init__(
         self,
-        i_layout: MethodLayout = (),
-        o_layout: MethodLayout = (),
+        i_layout: MethodLayout = StructLayout({}),
+        o_layout: MethodLayout = StructLayout({}),
         *,
         i_transform: Optional[tuple[MethodLayout, Callable[[TModule, MethodStruct], RecordDict]]] = None,
         o_transform: Optional[tuple[MethodLayout, Callable[[TModule, MethodStruct], RecordDict]]] = None,
@@ -271,8 +272,8 @@ class MethodProduct(Elaboratable, Unifier):
 
     def __init__(
         self,
-        i_layout: MethodLayout = (),
-        o_layouts: Iterable[MethodLayout] = (),
+        i_layout: MethodLayout = StructLayout({}),
+        o_layouts: Iterable[MethodLayout] = [StructLayout({})],
         combiner: Optional[tuple[MethodLayout, Callable[[TModule, list[MethodStruct]], RecordDict]]] = None,
         *,
         src_loc: int | SrcLoc = 0,
@@ -356,8 +357,8 @@ class MethodTryProduct(Elaboratable, Unifier):
 
     def __init__(
         self,
-        i_layout: MethodLayout = (),
-        o_layouts: Iterable[MethodLayout] = (),
+        i_layout: MethodLayout = StructLayout({}),
+        o_layouts: Iterable[MethodLayout] = [StructLayout({})],
         combiner: Optional[
             tuple[MethodLayout, Callable[[TModule, list[tuple[Value, MethodStruct]]], RecordDict]]
         ] = None,
@@ -371,7 +372,7 @@ class MethodTryProduct(Elaboratable, Unifier):
             Input layout of the `targets` methods.
         o_layouts: Iterable[MethodLayout]
             Output layouts of each of the `targets` methods.
-        combiner: (int or method layout, function), optional
+        combiner: (MethodLayout, function), optional
             A pair of the output layout and the combiner function. The
             combiner function takes two parameters: a `TModule` and
             a list of pairs. Each pair contains a bit which signals
@@ -381,7 +382,7 @@ class MethodTryProduct(Elaboratable, Unifier):
             Alternatively, the source location to use instead of the default.
         """
         if combiner is None:
-            combiner = ([], lambda _, __: {})
+            combiner = (StructLayout({}), lambda _, __: {})
         self.targets = [Method(i=i_layout, o=o_layout) for o_layout in o_layouts]
         self.combiner = combiner
         self.src_loc = get_src_loc(src_loc)
@@ -440,7 +441,7 @@ class Collector(Elaboratable, Unifier):
     of the provided methods.
     """
 
-    def __init__(self, count: int = 1, o_layout: MethodLayout = (), *, src_loc: int | SrcLoc = 0):
+    def __init__(self, count: int = 1, o_layout: MethodLayout = StructLayout({}), *, src_loc: int | SrcLoc = 0):
         """
         Parameters
         ----------
@@ -495,7 +496,13 @@ class NonexclusiveWrapper(Elaboratable, TransformerOneTarget):
     Possible use case is unifying parallel pipelines with the same latency.
     """
 
-    def __init__(self, i_layout: MethodLayout = (), o_layout: MethodLayout = (), *, src_loc: int | SrcLoc = 0):
+    def __init__(
+        self,
+        i_layout: MethodLayout = StructLayout({}),
+        o_layout: MethodLayout = StructLayout({}),
+        *,
+        src_loc: int | SrcLoc = 0,
+    ):
         """
         Parameters
         ----------

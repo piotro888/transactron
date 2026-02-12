@@ -14,6 +14,7 @@ from collections.abc import Iterable, Mapping
 from amaranth import *
 from amaranth.lib.data import StructLayout, View
 from amaranth_types import ShapeLike, ValueLike
+from amaranth_types.types import ValueCastable
 
 __all__ = [
     "MethodLayout",
@@ -37,8 +38,8 @@ ValueBundle: TypeAlias = Value | Record | View | Iterable["ValueBundle"] | Mappi
 LayoutListField: TypeAlias = tuple[str, "ShapeLike | LayoutList"]
 LayoutList: TypeAlias = list["LayoutListField"]
 LayoutIterable: TypeAlias = Iterable["LayoutListField"]
-MethodLayout: TypeAlias = StructLayout | LayoutIterable
-MethodStruct: TypeAlias = "View[StructLayout]"
+MethodLayout: TypeAlias = ShapeLike
+MethodStruct: TypeAlias = Value | ValueCastable
 
 RecordIntDict: TypeAlias = Mapping[str, Union[int, "RecordIntDict"]]
 RecordIntDictRet: TypeAlias = Mapping[str, Any]  # full typing hard to work with

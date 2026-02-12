@@ -57,7 +57,11 @@ class AdapterTrans(AdapterBase):
     """The method called by the `AdapterTrans`."""
 
     def __init__(
-        self, name: Optional[str] = None, i: MethodLayout = [], o: MethodLayout = [], src_loc: int | SrcLoc = 0
+        self,
+        name: Optional[str] = None,
+        i: MethodLayout = EmptyLayout(),
+        o: MethodLayout = EmptyLayout(),
+        src_loc: int | SrcLoc = 0,
     ):
         """
         Parameters
@@ -137,8 +141,8 @@ class Adapter(AdapterBase):
     def __init__(
         self,
         name: Optional[str] = None,
-        i: MethodLayout = [],
-        o: MethodLayout = [],
+        i: ShapeLike = EmptyLayout(),
+        o: ShapeLike = EmptyLayout(),
         src_loc: int | SrcLoc = 0,
         **kwargs: Unpack[AdapterBodyParams],
     ):

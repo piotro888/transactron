@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from amaranth.lib.data import ArrayLayout, StructLayout
+from amaranth.lib.data import ArrayLayout
 from dataclasses_json import dataclass_json
 from typing import Optional, Type, TypeVar
 from abc import ABC
@@ -8,9 +8,10 @@ from enum import Enum
 from amaranth import *
 from amaranth.utils import bits_for, ceil_log2, exact_log2
 
-from transactron.utils import OneHotSwitchDynamic, ValueBundle
 from transactron import Method, Methods, def_methods, TModule
+from transactron.core.method import EmptyLayout
 from transactron.lib import FIFO, AsyncMemoryBank, logging
+from transactron.utils import OneHotSwitchDynamic, ValueBundle
 from transactron.utils.amaranth_ext.functions import and_value, max_value, min_value, or_value, sum_value, popcount
 from transactron.utils.dependencies import ListKey, DependencyContext, SimpleKey
 
@@ -135,7 +136,7 @@ class DummyMethod(Method):
     """
 
     def __call__(self, *args, **kwargs):
-        return Signal(StructLayout({}))
+        return Signal(EmptyLayout())
 
 
 class HwMetric(ABC, MetricModel):
