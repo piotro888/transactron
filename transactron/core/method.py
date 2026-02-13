@@ -4,7 +4,7 @@ import enum
 from transactron.utils import *
 from amaranth import *
 from amaranth import tracer
-from amaranth.lib.data import StructLayout, View
+from amaranth.lib.data import StructLayout
 from amaranth_types import ShapeLike, ValueLike
 from typing import TYPE_CHECKING, Annotated, Optional, Iterator, TypeAlias, TypeVar, Unpack, overload
 from .transaction_base import *
@@ -108,8 +108,8 @@ class Method(TransactionBase["Transaction | Method"]):
         self.name = name or tracer.get_var_name(depth=2, default=owner_name)
         self.ready = Signal(name=self.owned_name + "_ready")
         self.run = Signal(name=self.owned_name + "_run")
-        self.data_in = Signal(i, name=self.owned_name + "_data_in")
-        self.data_out = Signal(o, name=self.owned_name + "_data_out")
+        self.data_in: MethodStruct = Signal(i, name=self.owned_name + "_data_in")
+        self.data_out: MethodStruct = Signal(o, name=self.owned_name + "_data_out")
 
     @property
     def layout_in(self):
@@ -251,8 +251,8 @@ class Method(TransactionBase["Transaction | Method"]):
         # - This simulates faster in pysim.
         m.d.comb += self.ready.eq(body.ready)
         m.d.comb += self.run.eq(body.run)
-        m.d.comb += self.data_in.eq(body.data_in)
-        m.d.comb += self.data_out.eq(body.data_out)
+        m.d.comb += Value.cast(self.data_in).eq(body.data_in)
+        m.d.comb += Value.cast(self.data_out).eq(body.data_out)
 
         DependencyContext.get().add_dependency(DefinedMethodsKey(), self)
 

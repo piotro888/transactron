@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from amaranth.lib.data import ArrayLayout
 from dataclasses_json import dataclass_json
 from typing import Optional, Type, TypeVar
 from abc import ABC
@@ -7,6 +6,7 @@ from enum import Enum
 
 from amaranth import *
 from amaranth.utils import bits_for, ceil_log2, exact_log2
+from amaranth.lib.data import ArrayLayout, StructLayout, View
 
 from transactron import Method, Methods, def_methods, TModule
 from transactron.core.method import EmptyLayout
@@ -330,7 +330,9 @@ class TaggedCounter(Elaboratable, HwMetric):
             if 2**log != value:
                 self.one_hot = False
 
-        self.incr = self.wrap_method(Methods(ways, i=[("tag", Shape(self.tag_width, signed=negative_values))]))
+        self.incr = self.wrap_method(
+            Methods(ways, i=StructLayout({"tag": Shape(self.tag_width, signed=negative_values)}))
+        )
 
         self.counters: dict[int, HwMetricRegister] = {}
         for tag_value, name in counters_meta:
@@ -425,7 +427,7 @@ class HwExpHistogram(Elaboratable, HwMetric):
         self.bucket_count = bucket_count
         self.sample_width = sample_width
 
-        self.add = self.wrap_method(Methods(ways, i=[("sample", self.sample_width)]))
+        self.add = self.wrap_method(Methods(ways, i=StructLayout({"sample": self.sample_width})))
 
         self.count = HwMetricRegister("count", registers_width, "the count of events that have been observed")
         self.sum = HwMetricRegister("sum", registers_width, "the total sum of all observed values")
@@ -481,6 +483,7 @@ class HwExpHistogram(Elaboratable, HwMetric):
                 m.d.comb += bucket_incrs[i][k].eq(should_incr)
 
         def sample_or_default(method: Method, default: Value) -> Value:
+            assert isinstance(method.data_in, View)
             return Mux(method.run, method.data_in.sample, default)
 
         method_min_samples = list(sample_or_default(m, C((1 << self.sample_width)) - 1) for m in self.add)
@@ -571,7 +574,7 @@ class FIFOLatencyMeasurer(Elaboratable):
 
         epoch_width = bits_for(self.max_latency)
 
-        self.fifos = [FIFO([("epoch", epoch_width)], self.slots_number) for _ in range(len(self.start))]
+        self.fifos = [FIFO(epoch_width, self.slots_number) for _ in range(len(self.start))]
         for k in range(len(self.start)):
             m.submodules[f"fifo{k}"] = self.fifos[k]
 
@@ -590,7 +593,7 @@ class FIFOLatencyMeasurer(Elaboratable):
             ret = self.fifos[k].read(m)
             # The result of substracting two unsigned n-bit is a signed (n+1)-bit value,
             # so we need to cast the result and discard the most significant bit.
-            duration = (epoch - ret.epoch).as_unsigned()[:-1]
+            duration = (epoch - ret).as_unsigned()[:-1]
             self.histogram.add[k](m, duration)
 
         return m
@@ -657,8 +660,8 @@ class TaggedLatencyMeasurer(Elaboratable):
         self.slots_number = slots_number
         self.max_latency = max_latency
 
-        self.start = HwMetric.wrap_method(Methods(ways, i=[("slot", range(0, slots_number))]))
-        self.stop = HwMetric.wrap_method(Methods(ways, i=[("slot", range(0, slots_number))]))
+        self.start = HwMetric.wrap_method(Methods(ways, i=StructLayout({"slot": range(0, slots_number)})))
+        self.stop = HwMetric.wrap_method(Methods(ways, i=StructLayout({"slot": range(0, slots_number)})))
 
         # This bucket count gives us the best possible granularity.
         bucket_count = bits_for(self.max_latency) + 1
@@ -712,7 +715,7 @@ class TaggedLatencyMeasurer(Elaboratable):
             ret = self.slots.read[k](m, addr=slot)
             # The result of substracting two unsigned n-bit is a signed (n+1)-bit value,
             # so we need to cast the result and discard the most significant bit.
-            duration = (epoch - ret.data).as_unsigned()[:-1]
+            duration = (epoch - ret).as_unsigned()[:-1]
             self.histogram.add[k](m, duration)
 
         return m

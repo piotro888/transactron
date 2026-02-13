@@ -350,8 +350,8 @@ class TransactionManager(Elaboratable):
         for method in chain(provided_methods):
             m.d.comb += method.ready.eq(method._body.ready)
             m.d.comb += method.run.eq(method._body.run)
-            m.d.comb += method.data_in.eq(method._body.data_in)
-            m.d.comb += method.data_out.eq(method._body.data_out)
+            m.d.comb += Value.cast(method.data_in).eq(method._body.data_in)
+            m.d.comb += Value.cast(method.data_out).eq(method._body.data_out)
 
         for transaction in method_map.transactions:
             ready = [

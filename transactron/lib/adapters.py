@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Optional, Unpack
 from amaranth import *
+from amaranth import ShapeLike
 from amaranth.lib.wiring import Component, In, Out
 from amaranth.lib.data import StructLayout, View
 
@@ -15,12 +16,12 @@ __all__ = [
 
 
 class AdapterBase(Component):
-    data_in: MethodStruct
-    data_out: MethodStruct
+    data_in: Signal
+    data_out: Signal
     en: Signal
     done: Signal
 
-    def __init__(self, iface: Method, layout_in: StructLayout, layout_out: StructLayout):
+    def __init__(self, iface: Method, layout_in: ShapeLike, layout_out: ShapeLike):
         super().__init__({"data_in": In(layout_in), "data_out": Out(layout_out), "en": In(1), "done": Out(1)})
         self.iface = iface
 

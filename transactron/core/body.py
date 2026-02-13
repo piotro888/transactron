@@ -7,6 +7,7 @@ from transactron.core.tmodule import CtrlPath, TModule
 from transactron.core.transaction_base import TransactionBase
 
 from amaranth import *
+from amaranth.lib.data import StructLayout
 from amaranth_types import ShapeLike, ValueLike, ModuleLike, SrcLoc
 from typing import TYPE_CHECKING, ClassVar, NewType, NotRequired, Optional, Callable, TypedDict, Unpack, final
 from transactron.utils.amaranth_ext.elaboratables import OneHotSwitchDynamic
@@ -37,7 +38,7 @@ class Body(TransactionBase["Body"]):
     def_order: int
     stack: ClassVar[list["Body"]] = []
     ctrl_path: CtrlPath = CtrlPath(-1, [])
-    method_uses: dict["Method", tuple[MethodStruct, Signal]]
+    method_uses: dict["Method", tuple[Value, Signal]]
     method_calls: defaultdict["Method", list[tuple[CtrlPath, MethodStruct, ValueLike]]]
 
     def __init__(
@@ -45,8 +46,8 @@ class Body(TransactionBase["Body"]):
         *,
         name: str,
         owner: Optional[Elaboratable],
-        i: StructLayout,
-        o: StructLayout,
+        i: ShapeLike,
+        o: ShapeLike,
         src_loc: SrcLoc,
         **kwargs: Unpack[BodyParams],
     ):
@@ -67,9 +68,9 @@ class Body(TransactionBase["Body"]):
         self.ready = Signal(name=self.owned_name + "_ready")
         self.runnable = Signal(name=self.owned_name + "_runnable")
         self.run = Signal(name=self.owned_name + "_run")
-        self.combiner: Callable[[Module, Sequence[MethodStruct], Value], AssignArg] = (
         self.data_in = Signal(i, name=self.owned_name + "_data_in")
         self.data_out = Signal(o, name=self.owned_name + "_data_out")
+        self.combiner: Callable[[Module, Sequence[MethodStruct], Value], AssignArg] = (
             kwargs["combiner"] if "combiner" in kwargs else default_combiner
         )
         self.nonexclusive = kwargs["nonexclusive"] if "nonexclusive" in kwargs else False

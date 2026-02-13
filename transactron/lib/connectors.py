@@ -4,6 +4,7 @@ from amaranth.lib.data import View
 from amaranth_types import ShapeLike
 import amaranth.lib.fifo
 
+from transactron.utils.assign import assign
 from transactron.utils.transactron_helpers import from_method_layout
 from ..core import *
 from ..utils import SrcLoc, get_src_loc, MethodLayout
@@ -136,12 +137,12 @@ class Forwarder(Elaboratable):
 
         @def_method(m, self.write, ready=~reg_valid)
         def _(arg):
-            m.d.av_comb += read_value.eq(arg)  # for forwarding
-            m.d.sync += reg.eq(arg)
+            m.d.av_comb += assign(read_value, arg)  # for forwarding
+            m.d.sync += assign(reg, arg)
             m.d.sync += reg_valid.eq(1)
 
         with m.If(reg_valid):
-            m.d.av_comb += read_value.eq(reg)  # write method is not ready
+            m.d.av_comb += assign(read_value, reg)  # write method is not ready
 
         @def_method(m, self.read, ready=reg_valid | self.write.run)
         def _():
@@ -223,7 +224,7 @@ class Pipe(Elaboratable):
 
         @def_method(m, self.write, ready=~reg_valid | self.read.run)
         def _(arg):
-            m.d.sync += reg.eq(arg)
+            m.d.sync += assign(reg, arg)
             m.d.sync += reg_valid.eq(1)
 
         @def_method(m, self.clear)
@@ -252,7 +253,9 @@ class Connect(Elaboratable):
         structure.
     """
 
-    def __init__(self, layout: ShapeLike = EmptyLayout(), rev_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0):
+    def __init__(
+        self, layout: ShapeLike = EmptyLayout(), rev_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0
+    ):
         """
         Parameters
         ----------
@@ -278,12 +281,12 @@ class Connect(Elaboratable):
 
         @def_method(m, self.write)
         def _(arg):
-            m.d.av_comb += read_value.eq(arg)
+            m.d.av_comb += assign(read_value, arg)
             return rev_read_value
 
         @def_method(m, self.read)
         def _(arg):
-            m.d.av_comb += rev_read_value.eq(arg)
+            m.d.av_comb += assign(rev_read_value, arg)
             return read_value
 
         return m
@@ -301,7 +304,9 @@ class ConnectTrans(Elaboratable):
     method1: Required[Method]
     method2: Required[Method]
 
-    def __init__(self, i_layout: ShapeLike = EmptyLayout(), o_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0):
+    def __init__(
+        self, i_layout: ShapeLike = EmptyLayout(), o_layout: ShapeLike = EmptyLayout(), *, src_loc: int | SrcLoc = 0
+    ):
         """
         Parameters
         ----------
@@ -345,8 +350,8 @@ class ConnectTrans(Elaboratable):
             data1 = Signal.like(self.method1.data_out)
             data2 = Signal.like(self.method2.data_out)
 
-            m.d.top_comb += data1.eq(self.method1(m, data2))
-            m.d.top_comb += data2.eq(self.method2(m, data1))
+            m.d.top_comb += assign(data1, self.method1(m, data2))
+            m.d.top_comb += assign(data2, self.method2(m, data1))
 
         return m
 

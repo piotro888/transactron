@@ -34,12 +34,14 @@ __all__ = [
 ]
 
 # Internal Coreblocks types
-ValueBundle: TypeAlias = Value | Record | View | Iterable["ValueBundle"] | Mapping[str, "ValueBundle"]
+ValueBundle: TypeAlias = Value | ValueCastable | Iterable["ValueBundle"] | Mapping[str, "ValueBundle"]
 LayoutListField: TypeAlias = tuple[str, "ShapeLike | LayoutList"]
 LayoutList: TypeAlias = list["LayoutListField"]
 LayoutIterable: TypeAlias = Iterable["LayoutListField"]
 MethodLayout: TypeAlias = ShapeLike
 MethodStruct: TypeAlias = Value | ValueCastable
+# add assignable type?
+# ValueCastable doesnt have eq itself..., do we want to force return of value? not really. Or do we?. Would that flatten View? Each :c
 
 RecordIntDict: TypeAlias = Mapping[str, Union[int, "RecordIntDict"]]
 RecordIntDictRet: TypeAlias = Mapping[str, Any]  # full typing hard to work with

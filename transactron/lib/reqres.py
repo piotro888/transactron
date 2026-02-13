@@ -1,4 +1,5 @@
 from amaranth import *
+from amaranth.lib.data import StructLayout
 
 from transactron.utils.transactron_helpers import from_method_layout
 from ..core import *
@@ -67,7 +68,7 @@ class ArgumentsToResultsZipper(Elaboratable):
         self.src_loc = get_src_loc(src_loc)
         self.results_layout = from_method_layout(results_layout)
         self.args_layout = from_method_layout(args_layout)
-        self.output_layout = [("args", self.args_layout), ("results", results_layout)]
+        self.output_layout = StructLayout({"args": self.args_layout, "results": results_layout})
 
         self.peek_arg = Method(o=self.args_layout, src_loc=self.src_loc)
         self.write_args = Method(i=self.args_layout, src_loc=self.src_loc)
@@ -147,9 +148,9 @@ class Serializer(Elaboratable):
             How many stack frames deep the source location is taken from.
             Alternatively, the source location to use instead of the default.
         """
-        if serialized_req_method.layout_out.size != 0:
+        if Shape.cast(serialized_req_method.layout_out).width != 0:
             raise ValueError("serialized_req_method must not return values")
-        if serialized_resp_method.layout_in.size != 0:
+        if Shape.cast(serialized_resp_method.layout_in).width != 0:
             raise ValueError("serialized_resp_method must not accept arguments")
 
         self.src_loc = get_src_loc(src_loc)
@@ -159,7 +160,7 @@ class Serializer(Elaboratable):
 
         self.depth = depth
 
-        self.id_layout = [("id", range(self.port_count))]
+        self.id_layout = StructLayout({"id": range(self.port_count)})
 
         self.clear = Method()
         self.serialize_in = Methods(port_count, i=serialized_req_method.layout_in, src_loc=self.src_loc)
