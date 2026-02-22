@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import functools
 from typing import Callable, Any, Optional, Unpack
 
+from amaranth import Value, ValueCastable
 from amaranth.sim._async import SimulatorContext
 from transactron.core.body import AdapterBodyParams
 from transactron.lib.adapters import Adapter, AdapterBase
@@ -17,7 +18,7 @@ class MethodMock:
     def __init__(
         self,
         adapter: AdapterBase,
-        function: Callable[..., Optional[RecordIntDict]],
+        function: Callable[..., Optional[RecordIntDict | int]],
         *,
         validate_arguments: Optional[Callable[..., bool]] = None,
         enable: Callable[[], bool] = lambda: True,
@@ -66,7 +67,12 @@ class MethodMock:
             self._effects = []
             with self._context():
                 ret = async_mock_def_helper(self, self.function, arg)
-            sim.set(self.adapter.data_in, ret)
+
+            if isinstance(self.adapter.data_in, ValueCastable):
+                sim.set(self.adapter.data_in, ret)
+            else:
+                assert isinstance(ret, int)
+                sim.set(self.adapter.data_in, ret)
 
     async def validate_arguments_process(self, sim: SimulatorContext) -> None:
         assert self.validate_arguments is not None

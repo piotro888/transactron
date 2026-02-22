@@ -1,4 +1,5 @@
 from amaranth import *
+from amaranth.lib.data import StructLayout
 from amaranth.utils import *
 import amaranth.lib.memory as memory
 from amaranth_types import ShapeLike
@@ -77,9 +78,9 @@ class MemoryBank(Elaboratable):
         self.writes_ports = write_ports
         self.memory_type = memory_type
 
-        self.read_reqs_layout: LayoutList = [("addr", range(self.depth))]
-        self.read_resps_layout = make_layout(("data", self.shape))
-        write_layout = [("addr", range(self.depth)), ("data", self.shape)]
+        self.read_reqs_layout = StructLayout({"addr": range(self.depth)})
+        self.read_resps_layout = self.shape
+        write_layout = {"addr": range(self.depth), "data": self.shape}
         if self.granularity is not None:
             # use Amaranth lib.memory granularity rule checks and width
             amaranth_write_port_sig = memory.WritePort.Signature(
@@ -87,8 +88,8 @@ class MemoryBank(Elaboratable):
                 shape=self.shape,  # type: ignore
                 granularity=granularity,
             )
-            write_layout.append(("mask", amaranth_write_port_sig.members["en"].shape))
-        self.writes_layout = make_layout(*write_layout)
+            write_layout["mask"] = amaranth_write_port_sig.members["en"].shape
+        self.writes_layout = StructLayout(write_layout)
 
         self.read_req = Methods(read_ports, i=self.read_reqs_layout, src_loc=self.src_loc)
         self.read_resp = Methods(read_ports, o=self.read_resps_layout, src_loc=self.src_loc)
@@ -192,10 +193,10 @@ class ContentAddressableMemory(Elaboratable):
         self.data_layout = from_method_layout(data_layout)
         self.entries_number = entries_number
 
-        self.read = Method(i=[("addr", self.address_layout)], o=[("data", self.data_layout), ("not_found", 1)])
-        self.remove = Method(i=[("addr", self.address_layout)])
-        self.push = Method(i=[("addr", self.address_layout), ("data", self.data_layout)])
-        self.write = Method(i=[("addr", self.address_layout), ("data", self.data_layout)], o=[("not_found", 1)])
+        self.read = Method(i=StructLayout({"addr": self.address_layout}), o=StructLayout({"data": self.data_layout, "not_found": 1}))
+        self.remove = Method(i=StructLayout({"addr": self.address_layout}))
+        self.push = Method(i=StructLayout({"addr": self.address_layout, "data": self.data_layout}))
+        self.write = Method(i=StructLayout({"addr": self.address_layout, "data": self.data_layout}), o=StructLayout({"not_found": 1}))
 
     def elaborate(self, platform) -> TModule:
         m = TModule()
@@ -302,9 +303,9 @@ class AsyncMemoryBank(Elaboratable):
         self.writes_ports = write_ports
         self.memory_type = memory_type
 
-        self.read_reqs_layout: LayoutList = [("addr", range(self.depth))]
-        self.read_resps_layout: LayoutList = [("data", self.shape)]
-        write_layout = [("addr", range(self.depth)), ("data", self.shape)]
+        self.read_reqs_layout = StructLayout({"addr": range(self.depth)})
+        self.read_resps_layout = StructLayout({"data": self.shape})
+        write_layout = {"addr": range(self.depth), "data": self.shape}
         if self.granularity is not None:
             # use Amaranth lib.memory granularity rule checks and width
             amaranth_write_port_sig = memory.WritePort.Signature(
@@ -312,8 +313,8 @@ class AsyncMemoryBank(Elaboratable):
                 shape=shape,  # type: ignore
                 granularity=granularity,
             )
-            write_layout.append(("mask", amaranth_write_port_sig.members["en"].shape))
-        self.writes_layout = make_layout(*write_layout)
+            write_layout["mask"] = amaranth_write_port_sig.members["en"].shape
+        self.writes_layout = StructLayout(write_layout)
 
         self.read = Methods(read_ports, i=self.read_reqs_layout, o=self.read_resps_layout, src_loc=self.src_loc)
         self.write = Methods(write_ports, i=self.writes_layout, src_loc=self.src_loc)

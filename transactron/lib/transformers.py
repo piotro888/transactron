@@ -250,10 +250,10 @@ class MethodFilter(Elaboratable, TransformerOneTarget):
                 m.d.top_comb += cond.eq(self.condition(m, arg))
                 with condition(m, nonblocking=True) as branch:
                     with branch(cond):
-                        m.d.comb += ret.eq(self.target(m, arg))
+                        m.d.comb += assign(ret, self.target(m, arg))
             else:
                 with m.If(self.condition(m, arg)):
-                    m.d.comb += ret.eq(self.target(m, arg))
+                    m.d.comb += assign(ret, self.target(m, arg))
             return ret
 
         return m

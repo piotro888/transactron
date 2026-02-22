@@ -1,8 +1,9 @@
+from amaranth import ShapeCastable
 import amaranth.lib.data as data
 from typing import TypeAlias
 
 
-MethodData: TypeAlias = "data.Const[data.StructLayout]"
+MethodData: TypeAlias = "data.Const[ShapeCastable] | int"
 
 
 def data_const_to_dict(c: "data.Const[data.Layout]"):

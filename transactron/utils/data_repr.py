@@ -84,7 +84,7 @@ def bits_from_int(num: int, lower: int, length: int):
 
 
 def data_layout(val: ShapeLike) -> MethodLayout:
-    return [("data", val)]
+    return StructLayout({"data": val})
 
 
 def neg(x: int, xlen: int) -> int:
